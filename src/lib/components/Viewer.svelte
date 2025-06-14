@@ -1,8 +1,9 @@
 <script lang="ts">
-    import ePub, { type Book, type Rendition } from "epubjs";
+    import ePub, { type Book, type Rendition, type Resource } from "epubjs";
     import { onMount } from "svelte";
+    import { get } from "svelte/store";
     import { bookData } from "$lib/stores/book";
-    import { audioUrl } from "$lib/stores/audio"; // <-- Import the new audio store
+    import { audioUrl } from "$lib/stores/audio";
 
     let viewerEl: HTMLElement;
     let rendition: Rendition;
@@ -16,16 +17,16 @@
                 // Wait for the book's resources to be loaded
                 await book.ready;
 
-                // --- NEW: Audio detection logic ---
+                // --- Audio detection logic ---
                 const audioResource = findAudioResource(book);
                 if (audioResource) {
                     // Get the audio data as a Blob
                     const audioBlob = await audioResource.blob();
                     // Create a temporary URL for the browser to play
                     const objectUrl = URL.createObjectURL(audioBlob);
-                    audioUrl.set(objectUrl); // <-- Set the URL in our store
+                    audioUrl.set(objectUrl);
                 }
-                // --- End of new logic ---
+                // --- End of audio logic ---
 
                 rendition = book.renderTo(viewerEl, {
                     width: "100%",
@@ -36,13 +37,13 @@
             }
         });
 
+        // Cleanup logic for when the component is destroyed
         return () => {
             unsub();
-            // Clean up the object URL when the component is destroyed
-            audioUrl.set(null);
-            const currentUrl = $audioUrl;
+            const currentUrl = get(audioUrl); // Get value from store safely
             if (currentUrl) {
                 URL.revokeObjectURL(currentUrl);
+                audioUrl.set(null);
             }
         };
     });
@@ -50,7 +51,7 @@
     /**
      * Scans the book's manifest for the first supported audio file.
      */
-    function findAudioResource(book: Book) {
+    function findAudioResource(book: Book): Resource | undefined {
         const supportedTypes = ["audio/mpeg", "audio/mp3", "audio/oembed"];
         // book.resources.all() gives us access to all files (images, css, audio, etc.)
         for (const href in book.resources.all()) {
@@ -59,7 +60,7 @@
                 return resource; // Return the first one we find
             }
         }
-        return null;
+        return undefined;
     }
 
     function next() {
@@ -76,7 +77,8 @@
         <button on:click={prev}>&larr; Previous</button>
         <button on:click={next}>Next &rarr;</button>
     </div>
-    <div class="viewer" bind:this={viewerEl} />
+    <!-- FIX: Changed self-closing tag to a proper opening/closing tag -->
+    <div class="viewer" bind:this={viewerEl}></div>
 </div>
 
 <style>

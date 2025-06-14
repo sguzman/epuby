@@ -1,6 +1,5 @@
 <script lang="ts">
     import { audioUrl } from "$lib/stores/audio";
-    import { onMount } from "svelte";
 
     // Component State
     let audioElement: HTMLAudioElement;
@@ -8,7 +7,7 @@
     let currentTime = 0;
     let duration = 0;
     let playbackRate = 1;
-    let skipIncrement = 10; // Default skip time in seconds
+    let skipIncrement = 10;
 
     // Reactive bindings
     $: if (audioElement && $audioUrl) {
@@ -20,9 +19,9 @@
 
     function togglePlay() {
         if (isPlaying) {
-            audioElement.pause();
+            audioElement?.pause();
         } else {
-            audioElement.play();
+            audioElement?.play();
         }
     }
 
@@ -45,18 +44,26 @@
     }
 </script>
 
-<!-- The HTML audio element is hidden, we control it via our custom UI -->
+<!--
+  FIX: Removed `bind:isPlaying`.
+  Instead, we use on:play and on:pause events to set our `isPlaying` variable.
+-->
 <audio
     bind:this={audioElement}
-    bind:isPlaying
     bind:currentTime
     bind:duration
-    on:canplay={() => audioElement.play()}
+    on:play={() => (isPlaying = true)}
+    on:pause={() => (isPlaying = false)}
+    on:canplay={() => audioElement?.play()}
 />
 
 <div class="player-bar">
     <!-- Play/Pause Button -->
-    <button class="control-btn play-pause" on:click={togglePlay}>
+    <button
+        class="control-btn play-pause"
+        on:click={togglePlay}
+        aria-label={isPlaying ? "Pause" : "Play"}
+    >
         {isPlaying ? "❚❚" : "►"}
     </button>
 
@@ -76,11 +83,24 @@
 
     <!-- Skip Controls -->
     <div class="skip-controls">
-        <button class="control-btn" on:click={() => seek("backward")}>
+        <button
+            class="control-btn"
+            on:click={() => seek("backward")}
+            aria-label="Skip Backward"
+        >
             «
         </button>
-        <input type="number" bind:value={skipIncrement} min="1" />
-        <button class="control-btn" on:click={() => seek("forward")}>
+        <input
+            type="number"
+            bind:value={skipIncrement}
+            min="1"
+            aria-label="Skip increment in seconds"
+        />
+        <button
+            class="control-btn"
+            on:click={() => seek("forward")}
+            aria-label="Skip Forward"
+        >
             »
         </button>
     </div>
