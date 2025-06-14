@@ -1,28 +1,39 @@
+<script lang="ts">
+  import FileUploader from "$lib/components/FileUploader.svelte";
+  import Viewer from "$lib/components/Viewer.svelte";
+  import { bookData } from "$lib/stores/book";
+</script>
+
 <main>
-  <div class="content">
-    <h1>Rsbuild with Svelte</h1>
-    <p>Start building amazing things with Rsbuild.</p>
-  </div>
+  <header>
+    <h1>Elegant ePub Reader</h1>
+  </header>
+
+  {#if $bookData}
+    <Viewer />
+  {:else}
+    <FileUploader />
+  {/if}
 </main>
 
 <style>
-.content {
-  display: flex;
-  min-height: 100vh;
-  line-height: 1.1;
-  text-align: center;
-  flex-direction: column;
-  justify-content: center;
-}
+  :global(body) {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    margin: 0;
+    background-color: #f8f8f8;
+  }
 
-.content h1 {
-  font-size: 3.6rem;
-  font-weight: 700;
-}
+  main {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
 
-.content p {
-  font-size: 1.2rem;
-  font-weight: 400;
-  opacity: 0.5;
-}
+  header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
 </style>
