@@ -10,14 +10,12 @@
     let rendition: Rendition;
     let book: Book;
 
-    // FIX: We use onMount to ensure viewerEl exists before we try to use it.
     onMount(() => {
         const currentBookData = get(bookData);
         if (!currentBookData) return;
 
         book = ePub(currentBookData);
 
-        // The book.renderTo call now happens safely inside onMount
         rendition = book.renderTo(viewerEl, {
             width: "100%",
             height: "100%",
@@ -26,20 +24,29 @@
         rendition.display();
 
         // Check for audio after the book is fully parsed
-        book.ready.then(() => {
-            const audioResource = findAudioResource(book);
-            if (audioResource) {
-                addNotification("Audio file found in ePub!", "success");
-                audioResource.blob().then((audioBlob) => {
-                    const objectUrl = URL.createObjectURL(audioBlob);
-                    audioUrl.set(objectUrl);
-                });
-            } else {
-                addNotification("No audio file found in this ePub.", "failure");
-            }
-        });
+        book.ready
+            .then(() => {
+                const audioResource = findAudioResource(book);
+                if (audioResource) {
+                    addNotification("Audio file found in ePub!", "success");
+                    audioResource.blob().then((audioBlob) => {
+                        const objectUrl = URL.createObjectURL(audioBlob);
+                        audioUrl.set(objectUrl);
+                    });
+                } else {
+                    // This should now correctly execute for ePubs without audio
+                    addNotification(
+                        "No audio file found in this ePub.",
+                        "failure",
+                    );
+                }
+            })
+            .catch((err) => {
+                // FIX: Catch any errors during book processing
+                console.error("Error processing ePub resources:", err);
+                addNotification("Failed to parse ePub resources.", "failure");
+            });
 
-        // Cleanup logic for when the component is destroyed
         return () => {
             const currentUrl = get(audioUrl);
             if (currentUrl) {
