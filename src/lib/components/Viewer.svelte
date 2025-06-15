@@ -4,60 +4,58 @@
     import { get } from "svelte/store";
     import { bookData } from "$lib/stores/book";
     import { audioUrl } from "$lib/stores/audio";
+    import { addNotification } from "$lib/stores/notifications";
 
     let viewerEl: HTMLElement;
     let rendition: Rendition;
     let book: Book;
 
+    // FIX: We use onMount to ensure viewerEl exists before we try to use it.
     onMount(() => {
-        const unsub = bookData.subscribe(async (data) => {
-            if (data) {
-                book = ePub(data);
+        const currentBookData = get(bookData);
+        if (!currentBookData) return;
 
-                // Wait for the book's resources to be loaded
-                await book.ready;
+        book = ePub(currentBookData);
 
-                // --- Audio detection logic ---
-                const audioResource = findAudioResource(book);
-                if (audioResource) {
-                    // Get the audio data as a Blob
-                    const audioBlob = await audioResource.blob();
-                    // Create a temporary URL for the browser to play
+        // The book.renderTo call now happens safely inside onMount
+        rendition = book.renderTo(viewerEl, {
+            width: "100%",
+            height: "100%",
+            flow: "paginated",
+        });
+        rendition.display();
+
+        // Check for audio after the book is fully parsed
+        book.ready.then(() => {
+            const audioResource = findAudioResource(book);
+            if (audioResource) {
+                addNotification("Audio file found in ePub!", "success");
+                audioResource.blob().then((audioBlob) => {
                     const objectUrl = URL.createObjectURL(audioBlob);
                     audioUrl.set(objectUrl);
-                }
-                // --- End of audio logic ---
-
-                rendition = book.renderTo(viewerEl, {
-                    width: "100%",
-                    height: "100%",
-                    flow: "paginated",
                 });
-                rendition.display();
+            } else {
+                addNotification("No audio file found in this ePub.", "failure");
             }
         });
 
         // Cleanup logic for when the component is destroyed
         return () => {
-            unsub();
-            const currentUrl = get(audioUrl); // Get value from store safely
+            const currentUrl = get(audioUrl);
             if (currentUrl) {
                 URL.revokeObjectURL(currentUrl);
                 audioUrl.set(null);
             }
+            book?.destroy();
         };
     });
 
-    /**
-     * Scans the book's manifest for the first supported audio file.
-     */
     function findAudioResource(book: Book): Resource | undefined {
         const supportedTypes = ["audio/mpeg", "audio/mp3", "audio/oembed"];
-        // book.resources.all() gives us access to all files (images, css, audio, etc.)
         for (const href in book.resources.all()) {
             const resource = book.resources.get(href);
             if (resource && supportedTypes.includes(resource.mediaType)) {
-                return resource; // Return the first one we find
+                return resource;
             }
         }
         return undefined;
@@ -77,14 +75,13 @@
         <button on:click={prev}>&larr; Previous</button>
         <button on:click={next}>Next &rarr;</button>
     </div>
-    <!-- FIX: Changed self-closing tag to a proper opening/closing tag -->
     <div class="viewer" bind:this={viewerEl}></div>
 </div>
 
 <style>
     .viewer-container {
         width: 100%;
-        height: 85vh; /* Adjusted height to make space for the player */
+        height: 85vh;
         display: flex;
         flex-direction: column;
     }

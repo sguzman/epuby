@@ -1,5 +1,6 @@
 <script lang="ts">
     import { bookData } from "$lib/stores/book";
+    import { addNotification } from "$lib/stores/notifications";
 
     let loading = false;
 
@@ -11,9 +12,11 @@
             return;
         }
 
-        // Check for the .epub extension
         if (!file.name.toLowerCase().endsWith(".epub")) {
-            alert("Please select a valid .epub file.");
+            addNotification(
+                "Invalid file type. Please select a .epub file.",
+                "failure",
+            );
             return;
         }
 
@@ -22,14 +25,14 @@
 
         reader.onload = (e) => {
             const arrayBuffer = e.target?.result as ArrayBuffer;
-            // When the file is loaded, update our store with its data
+            addNotification(`Successfully loaded "${file.name}"`, "success");
             bookData.set(arrayBuffer);
             loading = false;
         };
 
         reader.onerror = () => {
             loading = false;
-            alert("There was an error reading the file.");
+            addNotification(`Error reading file: "${file.name}"`, "failure");
         };
 
         reader.readAsArrayBuffer(file);

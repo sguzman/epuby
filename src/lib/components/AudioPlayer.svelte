@@ -55,7 +55,8 @@
     on:play={() => (isPlaying = true)}
     on:pause={() => (isPlaying = false)}
     on:canplay={() => audioElement?.play()}
-/>
+>
+</audio>
 
 <div class="player-bar">
     <!-- Play/Pause Button -->

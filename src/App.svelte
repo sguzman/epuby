@@ -1,11 +1,13 @@
 <script lang="ts">
   import FileUploader from "$lib/components/FileUploader.svelte";
   import Viewer from "$lib/components/Viewer.svelte";
-  import AudioPlayer from "$lib/components/AudioPlayer.svelte"; // <-- Import player
+  import AudioPlayer from "$lib/components/AudioPlayer.svelte";
+  import Notifier from "$lib/components/Notifier.svelte"; // <-- Import Notifier
   import { bookData } from "$lib/stores/book";
-  import { audioUrl } from "$lib/stores/audio"; // <-- Import audio store
+  import { audioUrl } from "$lib/stores/audio";
 </script>
 
+<Notifier />
 <main>
   <header>
     <h1>Elegant ePub Reader</h1>
@@ -18,7 +20,6 @@
   {/if}
 </main>
 
-<!-- This block will now render the player when an audio URL is available -->
 {#if $audioUrl}
   <AudioPlayer />
 {/if}
@@ -29,7 +30,6 @@
       Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     margin: 0;
     background-color: #f8f8f8;
-    /* Add padding to the bottom to prevent the player from overlapping content */
     padding-bottom: 80px;
   }
 
